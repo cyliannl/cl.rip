@@ -1,1 +1,206 @@
-test
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cylian</title>
+  <meta name="description" content="Cylian — Versailles, France." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Inter Tight", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      color: #111;
+      background: #fff;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { width: 100%; max-width: 300px; }
+
+    h1 { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.02em; }
+    .meta {
+      margin-top: 2px;
+      color: #999;
+      font-size: .95rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .email {
+      display: inline-block;
+      margin-top: 22px;
+      color: #111;
+      font-size: .95rem;
+      text-decoration: none;
+      transition: opacity .2s ease;
+    }
+    .email:hover { opacity: .6; }
+
+    .actions { display: flex; gap: 16px; margin-top: 14px; }
+    .actions a {
+      font-size: .95rem;
+      color: #111;
+      text-decoration: none;
+      transition: opacity .2s ease;
+    }
+    .actions a:hover { opacity: .6; }
+    .actions a::after {
+      content: "↗";
+      font-size: .8em;
+      margin-left: 3px;
+      color: #999;
+    }
+
+    .tools { margin-top: 26px; }
+    .tools-label {
+      font-size: .8rem; color: #bbb; margin-bottom: 8px;
+    }
+    .tools ul { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+    .tools a {
+      display: block;
+      padding: 6px 0;
+      color: #555;
+      text-decoration: none;
+      font-size: .95rem;
+      transition: color .2s ease;
+    }
+    .tools a:hover { color: #111; }
+
+    .tools-wrap { position: relative; }
+    .tools-wrap ul { overflow: hidden; transition: max-height .42s cubic-bezier(.22,1,.36,1); }
+    .tools-wrap.collapsed ul { max-height: 4.4rem; }
+    .tools-wrap.collapsed::after {
+      content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1.4rem;
+      background: linear-gradient(rgba(255,255,255,0), #fff 90%); pointer-events: none;
+    }
+    .show-more {
+      margin-top: 2px;
+      background: none; border: none; padding: 0; cursor: pointer;
+      font-family: inherit; font-size: .85rem; color: #aaa;
+      transition: color .2s ease;
+    }
+    .show-more:hover { color: #111; }
+
+    @media (prefers-color-scheme: dark) {
+      body { color: #eee; background: #111; }
+      .meta { color: #777; }
+      .actions a { color: #eee; }
+      .email { color: #eee; }
+      .tools-label { color: #666; }
+      .tools a { color: #999; }
+      .tools a:hover { color: #fff; }
+      .tools-wrap.collapsed::after { background: linear-gradient(rgba(17,17,17,0), #111 90%); }
+      .show-more { color: #666; }
+      .show-more:hover { color: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Cylian</h1>
+    <p class="meta">Versailles, France &middot; <span id="time"></span></p>
+
+    <nav class="actions">
+      <a href="projects.html">Projects</a>
+      <a href="experience.html">Experience</a>
+    </nav>
+
+    <div class="tools" id="tools" hidden>
+      <div class="tools-label">Tools</div>
+      <div class="tools-wrap" id="tools-wrap">
+        <ul id="tools-list"></ul>
+      </div>
+      <button class="show-more" id="show-more" hidden>Show more</button>
+    </div>
+
+    <a class="email" href="mailto:i@cl.rip">i@cl.rip</a>
+  </div>
+
+  <script>
+    // Live local time in Versailles (Europe/Paris).
+    const timeEl = document.getElementById('time');
+    const fmt = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false
+    });
+    const tick = () => { timeEl.textContent = fmt.format(new Date()); };
+    tick();
+    setInterval(tick, 10000);
+  </script>
+
+  <script>
+    // Auto-discover tools from the GitHub repo, then use each file's <title>.
+    const REPO = 'cyliannl/cl.rip';
+    const DIR = 'tools';
+
+    (async () => {
+      let files;
+      try {
+        const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${DIR}`);
+        if (!res.ok) return;
+        files = (await res.json()).filter(f => f.type === 'file' && /\.html?$/i.test(f.name));
+      } catch (_) { return; }
+      if (!files || !files.length) return;
+
+      // shuffle so the order changes each visit
+      for (let i = files.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [files[i], files[j]] = [files[j], files[i]];
+      }
+
+      const list = document.getElementById('tools-list');
+      document.getElementById('tools').hidden = false;
+
+      // collapse if there's more than one — show first, peek the second
+      if (files.length > 1) {
+        const wrap = document.getElementById('tools-wrap');
+        const ul = list;
+        const btn = document.getElementById('show-more');
+        let open = false;
+        wrap.classList.add('collapsed');
+        btn.hidden = false;
+        btn.addEventListener('click', () => {
+          open = !open;
+          if (open) {
+            wrap.classList.remove('collapsed');
+            ul.style.maxHeight = ul.scrollHeight + 'px';
+            btn.textContent = 'Show less';
+          } else {
+            ul.style.maxHeight = ul.scrollHeight + 'px';
+            requestAnimationFrame(() => {
+              wrap.classList.add('collapsed');
+              ul.style.maxHeight = '';
+            });
+            btn.textContent = 'Show more';
+          }
+        });
+      }
+
+      for (const f of files) {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = `${DIR}/${f.name}`;
+        a.textContent = f.name.replace(/\.html?$/i, '');
+        li.appendChild(a);
+        list.appendChild(li);
+
+        fetch(f.download_url)
+          .then(r => r.ok ? r.text() : null)
+          .then(html => {
+            if (!html) return;
+            const title = new DOMParser()
+              .parseFromString(html, 'text/html')
+              .querySelector('title')?.textContent.trim();
+            if (title) a.textContent = title;
+          })
+          .catch(() => {});
+      }
+    })();
+  </script>
+</body>
+</html>
