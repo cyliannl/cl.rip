@@ -8,7 +8,12 @@
     <meta name="keywords" content="roblox clothing template, roblox shirt template, roblox pants template, roblox template extractor, roblox asset downloader, roblox classic clothing">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://cylian.nl/tools/clothing-extractor.html">
-    <link rel="icon" href="media/extr.webp" type="image/webp">
+    <link rel="icon" href="../favicon.ico" sizes="48x48" />
+    <link rel="icon" href="../m/favicon-16.png" sizes="16x16" type="image/png" />
+    <link rel="icon" href="../m/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="icon" href="../m/favicon-192.png" sizes="192x192" type="image/png" />
+    <link rel="apple-touch-icon" href="../m/apple-touch-icon.png" sizes="180x180" />
+    <link rel="manifest" href="../site.webmanifest" />
 
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://cylian.nl/tools/clothing-extractor.html">
@@ -20,160 +25,113 @@
     <meta name="twitter:title" content="Roblox Clothing Template Extractor">
     <meta name="twitter:description" content="Extract and download the template texture from any Roblox classic clothing item. Paste a catalog URL or asset ID to get the PNG instantly.">
     <meta name="twitter:image" content="https://raw.githubusercontent.com/cyliannl/cylian.nl/main/tools/media/rbxextractor-thumbnail.svg">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { color-scheme: dark; --accent: #8A9A8B; }
 
         html, body { height: 100%; }
         body {
-            background: #fff;
-            color: #111;
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: "Inter Tight", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            background: #242424;
+            color: #eee;
             min-height: 100vh;
-            padding: 2.5rem 1.5rem;
-            max-width: 560px;
+            padding: 40px;
+            max-width: 460px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            -webkit-font-smoothing: antialiased;
         }
 
         .row {
             display: flex;
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            overflow: hidden;
-            transition: border-color 0.15s;
-            animation: intro 0.5s cubic-bezier(0.4,0,0.2,1) both;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            transition: border-color .2s ease;
         }
-        .row:focus-within { border-color: #aaa; }
+        .row:focus-within { border-color: var(--accent); }
 
         input[type="text"] {
             flex: 1;
             border: none;
             outline: none;
-            padding: 0.7rem 0.9rem;
-            font-size: 0.85rem;
-            font-family: monospace;
-            color: #111;
+            background: none;
+            padding: .5rem .1rem;
+            font-size: .95rem;
+            font-family: inherit;
+            color: #eee;
             min-width: 0;
         }
-
-        input::placeholder { color: #bbb; }
+        input::placeholder { color: #666; }
 
         button.go {
-            background: #111;
-            color: #fff;
+            background: none;
+            color: #ccc;
             border: none;
-            padding: 0 1.1rem;
-            font-size: 0.8rem;
-            font-weight: 500;
+            padding: .5rem 0 .5rem .9rem;
+            font-size: .95rem;
             cursor: pointer;
             white-space: nowrap;
             font-family: inherit;
+            transition: color .2s ease;
         }
+        button.go:hover { color: var(--accent); }
+        button.go:disabled { opacity: .3; cursor: not-allowed; }
 
-        button.go { transition: background 0.15s; }
-        button.go:hover { background: #333; }
-        button.go:disabled { background: #ccc; cursor: not-allowed; }
+        #result { display: none; margin-top: 1.75rem; }
+        #result.on { display: block; }
 
-        #result { display: none; margin-top: 2rem; }
-        #result.on { display: block; animation: fadeUp 0.5s cubic-bezier(0.4,0,0.2,1); }
-
-        .spinner {
-            width: 18px; height: 18px;
-            border: 2px solid #e0e0e0;
-            border-top-color: #111;
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-            margin: 3rem auto;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(5px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes intro {
-            from { opacity: 0; transform: translateY(-6px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes shine {
-            from { transform: translateX(-140%) skewX(-12deg); }
-            to   { transform: translateX(260%) skewX(-12deg); }
-        }
+        .loading { text-align: center; color: var(--accent); font-size: .9rem; margin: 2.5rem 0; }
 
         #templateArea { display: none; }
-        #templateArea.on { display: block; animation: fadeUp 0.45s cubic-bezier(0.4,0,0.2,1); }
+        #templateArea.on { display: block; }
 
         .img-wrap {
-            position: relative;
             overflow: hidden;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-            background: repeating-conic-gradient(#f0f0f0 0% 25%, #fff 0% 50%) 0 0 / 16px 16px;
+            border: 1px solid #444;
+            background: repeating-conic-gradient(#333 0% 25%, #242424 0% 50%) 0 0 / 16px 16px;
         }
-        .img-wrap::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            width: 50%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18) 40%, rgba(255,255,255,0.38) 50%, rgba(255,255,255,0.18) 60%, transparent);
-            transform: translateX(-120%) skewX(-12deg);
-            pointer-events: none;
-        }
-        .img-wrap.shining::after { animation: shine 1.6s cubic-bezier(0.25,0.1,0.25,1) forwards; }
-        img {
-            width: 100%;
-            display: block;
-            image-rendering: pixelated;
-            transition: opacity 0.4s cubic-bezier(0.4,0,0.2,1);
-        }
+        img { width: 100%; display: block; image-rendering: pixelated; }
 
-        .acts { margin-top: 0.75rem; }
-
+        .acts { margin-top: .75rem; display: flex; gap: 16px; }
         .acts button {
             background: none;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-            padding: 0.4rem 0.75rem;
-            font-size: 0.75rem;
+            border: none;
+            padding: 0;
+            font-size: .9rem;
             cursor: pointer;
             font-family: inherit;
-            color: #555;
-            transition: border-color 0.15s, color 0.15s;
-            animation: fadeUp 0.4s cubic-bezier(0.4,0,0.2,1) both;
+            color: #aaa;
+            transition: color .2s ease;
         }
-        .acts button:nth-child(1) { animation-delay: 0.15s; }
-        .acts button:nth-child(2) { animation-delay: 0.27s; }
-        .acts button:hover { border-color: #111; color: #111; }
+        .acts button:hover { color: var(--accent); }
 
         #errorBox {
             display: none;
-            font-size: 0.75rem;
+            font-size: .9rem;
             color: #999;
-            font-family: monospace;
             padding: 1rem 0;
             line-height: 1.6;
             white-space: pre-wrap;
-            word-break: break-all;
+            word-break: break-word;
         }
-        #errorBox.on { display: block; animation: fadeUp 0.2s ease; }
+        #errorBox.on { display: block; }
 
         #backBtn {
             display: none;
             align-self: flex-start;
-            margin-bottom: 0.75rem;
-            background: none;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-            padding: 0.4rem 0.75rem;
-            font-size: 0.75rem;
-            font-family: inherit;
-            color: #555;
+            margin-bottom: 1rem;
+            color: #888;
+            font-size: .9rem;
             text-decoration: none;
-            transition: border-color 0.15s, color 0.15s;
-            animation: fadeUp 0.4s cubic-bezier(0.4,0,0.2,1) both;
+            transition: color .2s ease;
         }
-        #backBtn:hover { border-color: #111; color: #111; }
+        #backBtn:hover { color: var(--accent); }
         #backBtn.on { display: block; }
     </style>
 </head>
@@ -187,7 +145,7 @@
 </div>
 
 <div id="result">
-    <div class="spinner" id="spin" style="display:none"></div>
+    <div class="loading" id="spin" style="display:none">Extracting…</div>
     <div id="templateArea">
         <div class="img-wrap" id="imgWrap"><img id="img" alt="" /></div>
         <div class="acts">
@@ -312,14 +270,7 @@
     const half = async () => {
         const el = _$('img');
         if (!el.src) return;
-        const wrap = _$('imgWrap');
         const src = el.src;
-        el.style.opacity = '0';
-        wrap.classList.remove('shining');
-        void wrap.offsetWidth;
-        wrap.classList.add('shining');
-        wrap.addEventListener('animationend', () => wrap.classList.remove('shining'), { once: true });
-        await new Promise(r => setTimeout(r, 350));
         const img = new Image();
         img.src = src;
         await new Promise(res => img.onload = res);
@@ -359,7 +310,6 @@
         _blob = await new Promise(res => cv.toBlob(b => res(URL.createObjectURL(b)), 'image/png'));
         el.src = _blob;
         await new Promise(r => { el.onload = r; });
-        el.style.opacity = '1';
     };
 
     if (window.location.search) _$('backBtn').classList.add('on');
