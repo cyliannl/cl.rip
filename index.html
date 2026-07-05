@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Cylian</title>
+  <title>Cylian - cl.rip</title>
   <meta name="description" content="Cylian — Versailles, France." />
   <link rel="icon" href="favicon.ico" sizes="48x48" />
   <link rel="icon" href="m/favicon-16.png" sizes="16x16" type="image/png" />
@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
-    :root { color-scheme: light dark; --accent: #8A9A8B; }
+    :root { color-scheme: dark; --accent: #8A9A8B; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
@@ -25,8 +25,8 @@
       align-items: center;
       justify-content: center;
       padding: 40px;
-      color: #111;
-      background: #fff;
+      color: #eee;
+      background: #242424;
       -webkit-font-smoothing: antialiased;
     }
     .wrap { width: 100%; max-width: 300px; }
@@ -34,47 +34,98 @@
     h1 { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.02em; }
     .meta {
       margin-top: 2px;
-      color: #999;
+      color: var(--accent);
       font-size: .95rem;
       font-variant-numeric: tabular-nums;
     }
+    .meta #time { color: var(--accent); font-weight: 500; font-size: .85rem; }
+    .divider { border: none; border-top: 1px solid #3a3a3a; margin: 10px 0; }
     .email {
       display: inline-block;
-      margin-top: 22px;
-      color: #111;
+      color: #ccc;
       font-size: .95rem;
       text-decoration: none;
-      transition: color .2s ease;
+      transition: opacity .2s ease;
     }
-    .email:hover { color: var(--accent); }
+    .email:hover { opacity: .7; }
 
-    .actions { display: flex; gap: 16px; margin-top: 14px; }
-    .actions a {
+    .actions { display: flex; gap: 10px; margin-top: 10px; }
+    .actions button {
+      font: inherit;
       font-size: .95rem;
-      color: #111;
+      color: #ccc;
+      font-weight: 500;
       text-decoration: none;
+      padding: 5px 12px;
+      border: 1px solid #444;
+      border-radius: 999px;
+      background: none;
+      cursor: pointer;
+      transition: color .2s ease, border-color .2s ease;
+    }
+    .actions button:hover { color: var(--accent); border-color: var(--accent); }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 100;
+    }
+    .overlay[hidden] { display: none; }
+    .overlay-content {
+      position: relative;
+      background: #2c2c2c;
+      border: 1px solid #444;
+      border-radius: 14px;
+      padding: 28px;
+      width: 100%;
+      max-width: 340px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .overlay-close {
+      position: absolute;
+      top: 14px; right: 14px;
+      background: none; border: none; cursor: pointer;
+      font: inherit; font-size: 1.1rem; line-height: 1;
+      color: #888;
       transition: color .2s ease;
     }
-    .actions a:hover { color: var(--accent); }
-    .actions a::after {
-      content: "↗";
-      font-size: .8em;
-      margin-left: 3px;
-      color: #999;
+    .overlay-close:hover { color: var(--accent); }
+    .overlay-section + .overlay-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #444;
+    }
+    .overlay-section h2 {
+      font-size: 1rem; font-weight: 600; color: var(--accent);
+      margin-bottom: 8px;
+    }
+    .overlay-section p {
+      font-size: .9rem; color: #888;
     }
 
-    .tools { margin-top: 26px; }
     .tools-label {
-      font-size: .8rem; color: #bbb; margin-bottom: 8px;
+      font-size: .8rem; color: var(--accent); margin-bottom: 2px;
     }
     .tools ul { list-style: none; display: flex; flex-direction: column; gap: 2px; }
     .tools a {
       display: block;
       padding: 6px 0;
-      color: #555;
+      color: #aaa;
       text-decoration: none;
       font-size: .95rem;
       transition: color .2s ease;
+    }
+    .tools a::after {
+      content: "↗";
+      font-size: .8em;
+      margin-left: 4px;
+      color: var(--accent);
     }
     .tools a:hover { color: var(--accent); }
 
@@ -83,28 +134,15 @@
     .tools-wrap.collapsed ul { max-height: 4.4rem; }
     .tools-wrap.collapsed::after {
       content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1.4rem;
-      background: linear-gradient(rgba(255,255,255,0), #fff 90%); pointer-events: none;
+      background: linear-gradient(rgba(36,36,36,0), #242424 90%); pointer-events: none;
     }
     .show-more {
       margin-top: 2px;
       background: none; border: none; padding: 0; cursor: pointer;
-      font-family: inherit; font-size: .85rem; color: #aaa;
+      font-family: inherit; font-size: .85rem; color: #666;
       transition: color .2s ease;
     }
-    .show-more:hover { color: #111; }
-
-    @media (prefers-color-scheme: dark) {
-      body { color: #eee; background: #242424; }
-      .meta { color: #777; }
-      .actions a { color: #eee; }
-      .email { color: #eee; }
-      .tools-label { color: #666; }
-      .tools a { color: #999; }
-      .tools a:hover { color: var(--accent); }
-      .tools-wrap.collapsed::after { background: linear-gradient(rgba(36,36,36,0), #242424 90%); }
-      .show-more { color: #666; }
-      .show-more:hover { color: var(--accent); }
-    }
+    .show-more:hover { color: var(--accent); }
   </style>
 </head>
 <body>
@@ -113,9 +151,10 @@
     <p class="meta">Versailles, France &middot; <span id="time"></span></p>
 
     <nav class="actions">
-      <a href="projects.html">Projects</a>
-      <a href="experience.html">Experience</a>
+      <button type="button" id="open-overlay">Projects &amp; Experiences</button>
     </nav>
+
+    <hr class="divider" />
 
     <div class="tools" id="tools" hidden>
       <div class="tools-label">Tools</div>
@@ -125,8 +164,43 @@
       <button class="show-more" id="show-more" hidden>Show more</button>
     </div>
 
+    <hr class="divider" />
+
     <a class="email" href="mailto:i@cl.rip">i@cl.rip</a>
   </div>
+
+  <div class="overlay" id="overlay" hidden>
+    <div class="overlay-content">
+      <button class="overlay-close" id="overlay-close" aria-label="Close">&times;</button>
+      <div class="overlay-section">
+        <h2>Projects</h2>
+        <p>Coming soon.</p>
+      </div>
+      <div class="overlay-section">
+        <h2>Experience</h2>
+        <p>Coming soon.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Projects & Experiences overlay.
+    const overlay = document.getElementById('overlay');
+    const openBtn = document.getElementById('open-overlay');
+    const closeBtn = document.getElementById('overlay-close');
+
+    const openOverlay = () => { overlay.hidden = false; };
+    const closeOverlay = () => { overlay.hidden = true; };
+
+    openBtn.addEventListener('click', openOverlay);
+    closeBtn.addEventListener('click', closeOverlay);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeOverlay();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !overlay.hidden) closeOverlay();
+    });
+  </script>
 
   <script>
     // Live local time in Versailles (Europe/Paris).
