@@ -39,17 +39,20 @@
       font-variant-numeric: tabular-nums;
     }
     .meta #time { color: var(--accent); font-weight: 500; font-size: .85rem; }
-    .divider { border: none; border-top: 1px solid #3a3a3a; margin: 10px 0; }
+    .divider { border: none; border-top: 1px solid #3a3a3a; margin: 10px 0; width: 100%; }
     .email {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       color: #ccc;
       font-size: .95rem;
       text-decoration: none;
       transition: opacity .2s ease;
     }
     .email:hover { opacity: .7; }
+    .email svg { width: 14px; height: 14px; flex-shrink: 0; }
 
-    .actions { display: flex; gap: 10px; margin-top: 10px; }
+    .actions { display: flex; gap: 10px; margin-top: 10px; width: fit-content; }
     .actions button {
       font: inherit;
       font-size: .95rem;
@@ -65,31 +68,38 @@
     }
     .actions button:hover { color: var(--accent); border-color: var(--accent); }
 
+    .wrap { transition: margin-right .32s cubic-bezier(.22,1,.36,1); }
+
     .overlay {
       position: fixed;
       inset: 0;
       background: rgba(0, 0, 0, .6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
       z-index: 100;
+      transition: opacity .25s ease, visibility 0s linear .25s;
     }
-    .overlay[hidden] { display: none; }
+    .overlay.open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transition: opacity .25s ease;
+    }
     .overlay-content {
-      position: relative;
-      background: #2c2c2c;
-      border: 1px solid #444;
-      border-radius: 14px;
-      padding: 28px;
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
       width: 100%;
-      max-width: 340px;
-      max-height: 80vh;
+      background: #2c2c2c;
+      padding: 28px;
       overflow-y: auto;
+      transform: translateX(100%);
+      transition: transform .32s cubic-bezier(.22,1,.36,1);
     }
+    .overlay.open .overlay-content { transform: translateX(0); }
     .overlay-close {
       position: absolute;
-      top: 14px; right: 14px;
+      top: 14px; left: 14px;
       background: none; border: none; cursor: pointer;
       font: inherit; font-size: 1.1rem; line-height: 1;
       color: #888;
@@ -109,6 +119,17 @@
       font-size: .9rem; color: #888;
     }
 
+    @media (min-width: 720px) {
+      .overlay { background: none; }
+      .overlay-content {
+        width: 360px;
+        box-shadow: -4px 0 24px rgba(0, 0, 0, .35);
+        border-left: 1px solid #444;
+      }
+      body.sidebar-open .wrap { margin-right: 360px; }
+    }
+
+    .tools { width: fit-content; max-width: 100%; }
     .tools-label {
       font-size: .8rem; color: var(--accent); margin-bottom: 2px;
     }
@@ -154,7 +175,7 @@
       <button type="button" id="open-overlay">Projects &amp; Experiences</button>
     </nav>
 
-    <hr class="divider" />
+    <hr class="divider" id="divider-1" />
 
     <div class="tools" id="tools" hidden>
       <div class="tools-label">Tools</div>
@@ -164,12 +185,18 @@
       <button class="show-more" id="show-more" hidden>Show more</button>
     </div>
 
-    <hr class="divider" />
+    <hr class="divider" id="divider-2" />
 
-    <a class="email" href="mailto:i@cl.rip">i@cl.rip</a>
+    <a class="email" href="mailto:i@cl.rip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="2" y="4" width="20" height="16" rx="2" />
+        <path d="m22 6-10 7L2 6" />
+      </svg>
+      i@cl.rip
+    </a>
   </div>
 
-  <div class="overlay" id="overlay" hidden>
+  <div class="overlay" id="overlay">
     <div class="overlay-content">
       <button class="overlay-close" id="overlay-close" aria-label="Close">&times;</button>
       <div class="overlay-section">
@@ -189,8 +216,14 @@
     const openBtn = document.getElementById('open-overlay');
     const closeBtn = document.getElementById('overlay-close');
 
-    const openOverlay = () => { overlay.hidden = false; };
-    const closeOverlay = () => { overlay.hidden = true; };
+    const openOverlay = () => {
+      overlay.classList.add('open');
+      document.body.classList.add('sidebar-open');
+    };
+    const closeOverlay = () => {
+      overlay.classList.remove('open');
+      document.body.classList.remove('sidebar-open');
+    };
 
     openBtn.addEventListener('click', openOverlay);
     closeBtn.addEventListener('click', closeOverlay);
@@ -198,8 +231,28 @@
       if (e.target === overlay) closeOverlay();
     });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !overlay.hidden) closeOverlay();
+      if (e.key === 'Escape' && overlay.classList.contains('open')) closeOverlay();
     });
+  </script>
+
+  <script>
+    // Size each divider to whichever neighboring element (above/below) is wider.
+    const actionsEl = document.querySelector('.actions');
+    const toolsEl = document.getElementById('tools');
+    const emailEl = document.querySelector('.email');
+    const divider1 = document.getElementById('divider-1');
+    const divider2 = document.getElementById('divider-2');
+
+    window.sizeDividers = () => {
+      const actionsW = actionsEl.offsetWidth;
+      const toolsW = toolsEl.hidden ? 0 : toolsEl.offsetWidth;
+      const emailW = emailEl.offsetWidth;
+      divider1.style.width = Math.max(actionsW, toolsW) + 'px';
+      divider2.style.width = Math.max(toolsW, emailW) + 'px';
+    };
+    window.sizeDividers();
+    if (document.fonts) document.fonts.ready.then(window.sizeDividers);
+    window.addEventListener('resize', window.sizeDividers);
   </script>
 
   <script>
@@ -235,6 +288,7 @@
 
       const list = document.getElementById('tools-list');
       document.getElementById('tools').hidden = false;
+      window.sizeDividers();
 
       // collapse if there's more than one — show first, peek the second
       if (files.length > 1) {
@@ -264,10 +318,11 @@
       for (const f of files) {
         const li = document.createElement('li');
         const a = document.createElement('a');
-        a.href = `${DIR}/${f.name}`;
+        a.href = `${DIR}/${f.name.replace(/\.html?$/i, '')}`;
         a.textContent = f.name.replace(/\.html?$/i, '');
         li.appendChild(a);
         list.appendChild(li);
+        window.sizeDividers();
 
         fetch(f.download_url)
           .then(r => r.ok ? r.text() : null)
@@ -277,6 +332,7 @@
               .parseFromString(html, 'text/html')
               .querySelector('title')?.textContent.trim();
             if (title) a.textContent = title;
+            window.sizeDividers();
           })
           .catch(() => {});
       }
