@@ -318,7 +318,7 @@
       for (const f of files) {
         const li = document.createElement('li');
         const a = document.createElement('a');
-        a.href = `${DIR}/${f.name.replace(/\.html?$/i, '')}`;
+        a.href = `${DIR}/${f.name.replace(/\.html?$/i, '')}?ref=home`;
         a.textContent = f.name.replace(/\.html?$/i, '');
         li.appendChild(a);
         list.appendChild(li);
