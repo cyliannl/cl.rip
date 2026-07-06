@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Verification Code</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root { color-scheme: dark; --accent: #8A9A8B; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Inter Tight", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      color: #eee;
+      background: #242424;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { width: 100%; max-width: 300px; }
+
+    h1 { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.02em; }
+    .divider { border: none; border-top: 1px solid #3a3a3a; margin: 10px 0; width: 100%; }
+
+    .field-label { font-size: .8rem; color: var(--accent); margin-bottom: 6px; }
+    .field {
+      width: 100%;
+      font: inherit;
+      font-size: .95rem;
+      color: #eee;
+      background: none;
+      border: 1px solid #444;
+      border-radius: 10px;
+      padding: 8px 12px;
+      transition: border-color .2s ease;
+    }
+    .field:focus { outline: none; border-color: var(--accent); }
+    .field.invalid { border-color: #a85c5c; }
+    .hint { font-size: .8rem; color: #666; margin-top: 6px; }
+    .hint.invalid { color: #a85c5c; }
+
+    .code-section { width: fit-content; max-width: 100%; }
+    .otp-wrap { display: flex; align-items: center; gap: 10px; margin: 4px 0 10px; user-select: none; }
+    .otp-part { font-size: 2.4rem; font-weight: 600; letter-spacing: .08em; color: #eee; font-variant-numeric: tabular-nums; user-select: text; cursor: text; }
+    .otp-sep { font-size: 1.2rem; color: #555; user-select: none; }
+
+    .actions { display: flex; gap: 10px; margin-top: 4px; width: fit-content; }
+    .actions button {
+      font: inherit;
+      font-size: .95rem;
+      color: #ccc;
+      font-weight: 500;
+      text-decoration: none;
+      padding: 5px 12px;
+      border: 1px solid #444;
+      border-radius: 999px;
+      background: none;
+      cursor: pointer;
+      transition: color .2s ease, border-color .2s ease;
+    }
+    .actions button:hover { color: var(--accent); border-color: var(--accent); }
+    .actions button.copied { color: var(--accent); border-color: var(--accent); }
+
+    .timer-bar-wrap { width: 100%; height: 2px; background: #3a3a3a; border-radius: 2px; margin-top: 14px; overflow: hidden; }
+    .timer-bar { height: 2px; border-radius: 2px; background: var(--accent); transition: width 1s linear, background .5s; }
+    .timer-label { font-size: .8rem; color: #666; margin-top: 8px; font-variant-numeric: tabular-nums; }
+
+    .locked-msg { font-size: .9rem; color: #888; padding: 4px 0; }
+
+    #backBtn {
+      display: none;
+      align-self: flex-start;
+      margin-bottom: 1rem;
+      color: #888;
+      font-size: .9rem;
+      text-decoration: none;
+      transition: color .2s ease;
+    }
+    #backBtn:hover { color: var(--accent); }
+    #backBtn.on { display: block; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a id="backBtn" href="/">← back</a>
+    <h1>Verification code</h1>
+
+    <hr class="divider" />
+
+    <div>
+      <div class="field-label">Secret key</div>
+      <input class="field" id="secret-input" type="text" autocomplete="off" spellcheck="false" placeholder="Enter base32 secret" oninput="onSecretInput(this)" />
+      <div class="hint" id="secret-hint"></div>
+    </div>
+
+    <hr class="divider" />
+
+    <div id="content"></div>
+  </div>
+
+  <script>
+    let SECRET = '';
+
+    function sanitizeSecret(raw) {
+      return raw.replace(/\s+/g, '').toUpperCase();
+    }
+
+    function isValidBase32(s) {
+      return /^[A-Z2-7]+=*$/.test(s) && s.replace(/=+$/, '').length > 0;
+    }
+
+    function setHint(msg, invalid) {
+      const hint = document.getElementById('secret-hint');
+      hint.textContent = msg || '';
+      hint.classList.toggle('invalid', !!invalid);
+    }
+
+    function onSecretInput(input) {
+      const cursorAtEnd = input.selectionStart === input.value.length;
+      const clean = sanitizeSecret(input.value);
+      if (input.value !== clean) {
+        input.value = clean;
+        if (cursorAtEnd) input.setSelectionRange(clean.length, clean.length);
+      }
+
+      if (clean && !isValidBase32(clean)) {
+        input.classList.add('invalid');
+        setHint('Invalid secret — expected base32 (A-Z, 2-7).', true);
+        SECRET = '';
+        stopTimer();
+        content.innerHTML = '';
+        return;
+      }
+
+      input.classList.remove('invalid');
+      setHint('');
+      SECRET = clean;
+
+      if (!SECRET) {
+        stopTimer();
+        content.innerHTML = `<p class="locked-msg">Enter a secret to generate a code.</p>`;
+        return;
+      }
+
+      startTimer();
+    }
+
+    function base32Decode(s) {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+      s = s.replace(/=+$/, '').toUpperCase();
+      let bits = 0, val = 0, out = [];
+      for (let i = 0; i < s.length; i++) {
+        val = (val << 5) | chars.indexOf(s[i]);
+        bits += 5;
+        if (bits >= 8) { out.push((val >>> (bits - 8)) & 255); bits -= 8; }
+      }
+      return new Uint8Array(out);
+    }
+
+    async function hmacSHA1(key, data) {
+      const k = await crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']);
+      const sig = await crypto.subtle.sign('HMAC', k, data);
+      return new Uint8Array(sig);
+    }
+
+    async function getTOTP() {
+      if (!SECRET) return null;
+      const keyBytes = base32Decode(SECRET);
+      const t = Math.floor(Date.now() / 1000 / 30);
+      const tb = new ArrayBuffer(8);
+      const view = new DataView(tb);
+      view.setUint32(4, t, false);
+      const hash = await hmacSHA1(keyBytes, tb);
+      const offset = hash[19] & 0xf;
+      const code = ((hash[offset] & 0x7f) << 24 | hash[offset+1] << 16 | hash[offset+2] << 8 | hash[offset+3]) % 1000000;
+      return code.toString().padStart(6, '0');
+    }
+
+    function secsRemaining() { return 30 - (Math.floor(Date.now() / 1000) % 30); }
+
+    const content = document.getElementById('content');
+    let timerInterval = null, currentCode = '';
+
+    function copyCode() {
+      navigator.clipboard.writeText(currentCode).then(() => {
+        const btn = document.getElementById('copy-btn');
+        if (!btn) return;
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+      });
+    }
+
+    function updateTimer() {
+      const secs = secsRemaining();
+      const bar = document.getElementById('timer-bar');
+      const lbl = document.getElementById('timer-label');
+      const pct = (secs / 30) * 100;
+      const barColor = secs <= 10 ? '#a85c5c' : secs <= 20 ? '#c9a45c' : 'var(--accent)';
+      if (bar) { bar.style.width = pct + '%'; bar.style.background = barColor; }
+      if (lbl) lbl.textContent = `Refreshes in ${secs}s`;
+    }
+
+    async function renderCode() {
+      if (!SECRET) return;
+      currentCode = await getTOTP();
+      const part1 = currentCode.slice(0, 3);
+      const part2 = currentCode.slice(3);
+      const secs = secsRemaining();
+      const pct = (secs / 30) * 100;
+      const barColor = secs <= 10 ? '#a85c5c' : secs <= 20 ? '#c9a45c' : 'var(--accent)';
+
+      if (document.getElementById('code-section')) {
+        const p1 = document.getElementById('otp-p1');
+        const p2 = document.getElementById('otp-p2');
+        if (p1) p1.textContent = part1;
+        if (p2) p2.textContent = part2;
+        updateTimer();
+        return;
+      }
+
+      content.innerHTML = `
+        <div class="code-section" id="code-section">
+          <div class="otp-wrap">
+            <span class="otp-part" id="otp-p1">${part1}</span>
+            <span class="otp-sep" aria-hidden="true">—</span>
+            <span class="otp-part" id="otp-p2">${part2}</span>
+          </div>
+          <nav class="actions">
+            <button type="button" id="copy-btn" onclick="copyCode()">Copy</button>
+          </nav>
+          <div class="timer-bar-wrap"><div class="timer-bar" id="timer-bar" style="width:${pct}%;background:${barColor}"></div></div>
+          <div class="timer-label" id="timer-label">Refreshes in ${secs}s</div>
+        </div>
+      `;
+    }
+
+    function startTimer() {
+      if (!SECRET) return;
+      if (timerInterval) clearInterval(timerInterval);
+      renderCode();
+      timerInterval = setInterval(async () => {
+        if (!SECRET) { stopTimer(); return; }
+        const secs = secsRemaining();
+        updateTimer();
+        if (secs === 30 || secs === 29) {
+          currentCode = await getTOTP();
+          const p1 = document.getElementById('otp-p1');
+          const p2 = document.getElementById('otp-p2');
+          if (p1) p1.textContent = currentCode.slice(0, 3);
+          if (p2) p2.textContent = currentCode.slice(3);
+        }
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    }
+
+    content.innerHTML = `<p class="locked-msg">Enter a secret to generate a code.</p>`;
+    if (new URLSearchParams(window.location.search).get('ref') === 'home') {
+      document.getElementById('backBtn').classList.add('on');
+    }
+  </script>
+</body>
+</html>
