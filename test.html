@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>00000</title>
+<link rel="preconnect" href="https://api.lanyard.rest">
+<link rel="preload" as="image" href="m/pfp.webp">
+<link rel="preload" as="font" type="font/woff2" href="fonts/geist.woff2" crossorigin>
+<style>
+  @font-face {
+    font-family: 'Geist';
+    src: url('fonts/geist.woff2') format('woff2');
+    font-weight: 400 500;
+    font-display: swap;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #000000;
+    font-family: 'Geist', sans-serif;
+  }
+  .container {
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 24px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  .pfp-wrap {
+    position: relative;
+    margin-bottom: 20px;
+  }
+  .pfp {
+    display: block;
+  }
+  .status-bg,
+  .status-icon {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    transform: translate(50%, 50%);
+  }
+  .status-bg {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #000000;
+  }
+  .greeting {
+    color: #ffffff;
+    font-size: 2.8rem;
+    font-weight: 500;
+    margin: 0;
+  }
+  .greeting span {
+    display: block;
+  }
+  .description {
+    color: #a1a1a1;
+    font-size: 1rem;
+    font-weight: 400;
+    margin: 16px 0 0;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="pfp-wrap">
+      <img class="pfp" src="m/pfp.webp" width="95" height="95" fetchpriority="high">
+      <div class="status-bg" id="statusBg"></div>
+      <img class="status-icon" id="statusIcon" width="20" height="20">
+    </div>
+    <p class="greeting"><span>Hi, I'm Cylian.</span><span>HLL Dev & Designer.</span></p>
+    <p class="description">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+  </div>
+  <script type="module">
+    try {
+      const res = await fetch('https://api.lanyard.rest/v1/users/830200981366112287');
+      const { success, data } = await res.json();
+      if (success) document.getElementById('statusIcon').src = `m/${data.discord_status}.webp`;
+    } catch {}
+  </script>
+</body>
+</html>
